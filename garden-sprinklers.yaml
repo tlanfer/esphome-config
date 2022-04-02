@@ -1,0 +1,14 @@
+substitutions:
+  project: garden
+  id: garden-sprinkler
+
+esphome:
+  name: $id
+
+esp8266:
+  board: d1_mini_pro
+
+<<: !include common/logging.yaml
+<<: !include common/api.yaml
+<<: !include common/ota.yaml
+<<: !include common/wifi.yaml
