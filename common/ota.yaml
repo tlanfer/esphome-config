@@ -1,0 +1,5 @@
+---
+
+# Enable OTA updates
+ota:
+  password: ""

@@ -1,0 +1,13 @@
+---
+
+# Enable wifi
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_pass
+
+  # Fallback Hotspot (requires "captive_portal:").
+  ap:
+    ssid: $id
+    password: !secret wifi_pass_failover
+
+captive_portal:
