@@ -11,3 +11,5 @@ wifi:
     password: !secret wifi_pass_failover
 
 captive_portal:
+
+web_server:

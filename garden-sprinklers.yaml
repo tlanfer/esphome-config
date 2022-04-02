@@ -6,9 +6,125 @@ esphome:
   name: $id
 
 esp8266:
-  board: d1_mini_pro
+  board: nodemcuv2
 
 <<: !include common/logging.yaml
 <<: !include common/api.yaml
 <<: !include common/ota.yaml
 <<: !include common/wifi.yaml
+
+##### Irrigation control
+
+number:
+  - platform: template
+    id: remaining_zone_1
+    name: "Remaining time Zone 1"
+    icon: "mdi:timer-sand"
+    step: 1
+    min_value: 0
+    max_value: 300
+    optimistic: true
+    unit_of_measurement: seconds
+
+  - platform: template
+    id: remaining_zone_2
+    name: "Remaining time Zone 2"
+    icon: "mdi:timer-sand"
+    step: 1
+    min_value: 0
+    max_value: 300
+    optimistic: true
+    unit_of_measurement: seconds
+
+  - platform: template
+    id: remaining_zone_3
+    name: "Remaining time Zone 3"
+    icon: "mdi:timer-sand"
+    step: 1
+    min_value: 0
+    max_value: 300
+    optimistic: true
+    unit_of_measurement: seconds
+
+  - platform: template
+    id: remaining_zone_4
+    name: "Remaining time Zone 4"
+    icon: "mdi:timer-sand"
+    step: 1
+    min_value: 0
+    max_value: 300
+    optimistic: true
+    unit_of_measurement: seconds
+
+switch:
+  - platform: gpio
+    id: relay1
+    pin: D1
+    restore_mode: ALWAYS_OFF
+    inverted: true
+
+  - platform: gpio
+    id: relay2
+    pin: D2
+    restore_mode: ALWAYS_OFF
+    inverted: true
+
+  - platform: gpio
+    id: relay3
+    pin: D3
+    restore_mode: ALWAYS_OFF
+    inverted: true
+
+  - platform: gpio
+    id: relay4
+    pin: D4
+    restore_mode: ALWAYS_OFF
+    inverted: true
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          int z1 = id(remaining_zone_1).state;
+          int z2 = id(remaining_zone_2).state;
+          int z3 = id(remaining_zone_3).state;
+          int z4 = id(remaining_zone_4).state;
+          
+          if(z1 > 0){
+            id(remaining_zone_1).set(z1 - 1);
+          
+            id(relay1).turn_on();
+            id(relay2).turn_off();
+            id(relay3).turn_off();
+            id(relay4).turn_off();
+          
+          } else if( z2 > 0) {
+            id(remaining_zone_2).set(z2 - 1);
+          
+            id(relay1).turn_off();
+            id(relay2).turn_on();
+            id(relay3).turn_off();
+            id(relay4).turn_off();
+          
+          } else if( z3 > 0) {
+            id(remaining_zone_3).set(z3 - 1);
+          
+            id(relay1).turn_off();
+            id(relay2).turn_off();
+            id(relay3).turn_on();
+            id(relay4).turn_off();
+          
+          } else if( z4 > 0) {
+            id(remaining_zone_4).set(z4 - 1);
+          
+            id(relay1).turn_off();
+            id(relay2).turn_off();
+            id(relay3).turn_off();
+            id(relay4).turn_on();
+          } else {
+          
+            id(relay1).turn_off();
+            id(relay2).turn_off();
+            id(relay3).turn_off();
+            id(relay4).turn_off();
+          }

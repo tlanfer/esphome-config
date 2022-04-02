@@ -7,5 +7,8 @@ RUN pip3 install wheel
 RUN pip3 install esphome
 RUN pip3 install jq yq
 
+ADD build.sh /build.sh
+RUN chmod +x /build.sh
+
 WORKDIR /work
-CMD make
+ENTRYPOINT [ "/build.sh" ]
