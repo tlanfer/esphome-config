@@ -12,17 +12,30 @@ esp8266:
 <<: !include common/api.yaml
 <<: !include common/ota.yaml
 <<: !include common/wifi.yaml
+<<: !include common/mqtt.yaml
+
+sensor:
+  - !include common/sensor/wifi_signal.yaml
 
 ##### Irrigation control
 
 number:
+  - platform: template
+    id: add_minutes
+    name: "Minutes to add"
+    step: 1
+    min_value: 0
+    max_value: 30
+    optimistic: true
+    unit_of_measurement: minutes
+
   - platform: template
     id: remaining_zone_1
     name: "Remaining time Zone 1"
     icon: "mdi:timer-sand"
     step: 1
     min_value: 0
-    max_value: 300
+    max_value: 1800
     optimistic: true
     unit_of_measurement: seconds
 
@@ -32,7 +45,7 @@ number:
     icon: "mdi:timer-sand"
     step: 1
     min_value: 0
-    max_value: 300
+    max_value: 1800
     optimistic: true
     unit_of_measurement: seconds
 
@@ -42,7 +55,7 @@ number:
     icon: "mdi:timer-sand"
     step: 1
     min_value: 0
-    max_value: 300
+    max_value: 1800
     optimistic: true
     unit_of_measurement: seconds
 
@@ -52,43 +65,222 @@ number:
     icon: "mdi:timer-sand"
     step: 1
     min_value: 0
-    max_value: 300
+    max_value: 1800
+    optimistic: true
+    unit_of_measurement: seconds
+
+  - platform: template
+    id: total_zone_1
+    name: "Total time Zone 1"
+    icon: "mdi:timer-sand"
+    step: 1
+    min_value: 0
+    max_value: 3600
+    optimistic: true
+    unit_of_measurement: seconds
+
+  - platform: template
+    id: total_zone_2
+    name: "Total time Zone 2"
+    icon: "mdi:timer-sand"
+    step: 1
+    min_value: 0
+    max_value: 3600
+    optimistic: true
+    unit_of_measurement: seconds
+
+  - platform: template
+    id: total_zone_3
+    name: "Total time Zone 3"
+    icon: "mdi:timer-sand"
+    step: 1
+    min_value: 0
+    max_value: 3600
+    optimistic: true
+    unit_of_measurement: seconds
+
+  - platform: template
+    id: total_zone_4
+    name: "Total time Zone 4"
+    icon: "mdi:timer-sand"
+    step: 1
+    min_value: 0
+    max_value: 3600
     optimistic: true
     unit_of_measurement: seconds
 
 switch:
+  - platform: template
+    name: "Add to Zone 1"
+    id: add_zone1
+    turn_on_action:
+      then:
+        - lambda: |-
+            int v1 = id(remaining_zone_1).state;
+            int v2 = id(total_zone_1).state;
+            int n = id(add_minutes).state * 60;
+            id(remaining_zone_1).set(v1 + n);
+            id(total_zone_1).set(v2 + n);
+
+  - platform: template
+    name: "Add to Zone 2"
+    id: add_zone2
+    turn_on_action:
+      then:
+        - lambda: |-
+            int v1 = id(remaining_zone_2).state;
+            int v2 = id(total_zone_2).state;
+            int n = id(add_minutes).state * 60;
+            id(remaining_zone_2).set(v1 + n);
+            id(total_zone_2).set(v2 + n);
+
+  - platform: template
+    name: "Add to Zone 3"
+    id: add_zone3
+    turn_on_action:
+      then:
+        - lambda: |-
+            int v1 = id(remaining_zone_3).state;
+            int v2 = id(total_zone_3).state;
+            int n = id(add_minutes).state * 60;
+            id(remaining_zone_3).set(v1 + n);
+            id(total_zone_3).set(v2 + n);
+
+  - platform: template
+    name: "Add to Zone 4"
+    id: add_zone4
+    turn_on_action:
+      then:
+        - lambda: |-
+            int v1 = id(remaining_zone_4).state;
+            int v2 = id(total_zone_4).state;
+            int n = id(add_minutes).state * 60;
+            id(remaining_zone_4).set(v1 + n);
+            id(total_zone_4).set(v2 + n);
+
+  - platform: template
+    name: "Cancel Zone 1"
+    id: cancel_zone1
+    turn_on_action:
+      then:
+        - lambda: |-
+            id(remaining_zone_1).set(0);
+            id(total_zone_1).set(0);
+
+  - platform: template
+    name: "Cancel Zone 2"
+    id: cancel_zone2
+    turn_on_action:
+      then:
+        - lambda: |-
+            id(remaining_zone_2).set(0);
+            id(total_zone_2).set(0);
+
+  - platform: template
+    name: "Cancel Zone 3"
+    id: cancel_zone3
+    turn_on_action:
+      then:
+        - lambda: |-
+            id(remaining_zone_3).set(0);
+            id(total_zone_3).set(0);
+
+  - platform: template
+    name: "Cancel Zone 4"
+    id: cancel_zone4
+    turn_on_action:
+      then:
+        - lambda: |-
+            id(remaining_zone_4).set(0);
+            id(total_zone_4).set(0);
+
   - platform: gpio
+    name: "Relay Zone 1"
     id: relay1
     pin: D1
     restore_mode: ALWAYS_OFF
     inverted: true
+    interlock: [relay1, relay2, relay3, relay4]
 
   - platform: gpio
+    name: "Relay Zone 2"
     id: relay2
     pin: D2
     restore_mode: ALWAYS_OFF
     inverted: true
+    interlock: [relay1, relay2, relay3, relay4]
 
   - platform: gpio
+    name: "Relay Zone 3"
     id: relay3
     pin: D3
     restore_mode: ALWAYS_OFF
     inverted: true
+    interlock: [relay1, relay2, relay3, relay4]
 
   - platform: gpio
+    name: "Relay Zone 4"
     id: relay4
     pin: D4
     restore_mode: ALWAYS_OFF
     inverted: true
+    interlock: [relay1, relay2, relay3, relay4]
+
+select:
+  - platform: template
+    name: "Operating mode"
+    id: opmode
+    optimistic: true
+    options:
+      - manual
+      - timer
+    initial_option: manual
+    on_value:
+      then:
+        - number.set:
+            id: remaining_zone_1
+            value: 0
+        - number.set:
+            id: remaining_zone_2
+            value: 0
+        - number.set:
+            id: remaining_zone_3
+            value: 0
+        - number.set:
+            id: remaining_zone_4
+            value: 0
+        - number.set:
+            id: total_zone_1
+            value: 0
+        - number.set:
+            id: total_zone_2
+            value: 0
+        - number.set:
+            id: total_zone_3
+            value: 0
+        - number.set:
+            id: total_zone_4
+            value: 0
 
 interval:
   - interval: 1s
     then:
       - lambda: |-
+          std::string val = to_string(id(opmode).state);
+
+          if(val != "timer") {
+            return;
+          }
+          
           int z1 = id(remaining_zone_1).state;
           int z2 = id(remaining_zone_2).state;
           int z3 = id(remaining_zone_3).state;
           int z4 = id(remaining_zone_4).state;
+          
+          if( z1 == 0 && id(total_zone_1).state > 0) id(total_zone_1).set(0);
+          if( z2 == 0 && id(total_zone_2).state > 0) id(total_zone_2).set(0);
+          if( z3 == 0 && id(total_zone_3).state > 0) id(total_zone_3).set(0);
+          if( z4 == 0 && id(total_zone_4).state > 0) id(total_zone_4).set(0);
           
           if(z1 > 0){
             id(remaining_zone_1).set(z1 - 1);
