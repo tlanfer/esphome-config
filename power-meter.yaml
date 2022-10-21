@@ -21,7 +21,7 @@ sensor:
 
   - platform: custom
     lambda: |-
-      auto power_sensor = new MyPowerSensor(50);
+      auto power_sensor = new MyPowerSensor(60);
       App.register_component(power_sensor);
       return {power_sensor};
       
