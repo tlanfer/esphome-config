@@ -8,24 +8,34 @@ esphome:
     - power-meter.h
 
 esp8266:
-  board: d1_mini_pro
+  board: d1_mini
 
 <<: !include common/logging.yaml
 <<: !include common/api.yaml
 <<: !include common/ota.yaml
 <<: !include common/wifi.yaml
-<<: !include common/mqtt.yaml
+#<<: !include common/mqtt.yaml
 
 sensor:
   - !include common/sensor/wifi_signal.yaml
 
   - platform: custom
+    id: power_usage
     lambda: |-
-      auto power_sensor = new MyPowerSensor(60);
-      App.register_component(power_sensor);
-      return {power_sensor};
+      auto my_sensor = new MyPowerSensor(65);
+      App.register_component(my_sensor);
+      return {my_sensor->power_sensor, my_sensor->total_sensor};
       
     sensors:
-      name: "Stromverbrauch"
-      unit_of_measurement: kW
-      accuracy_decimals: 2
+    - name: "Stromverbrauch"
+      icon: mdi:flash-outline
+      unit_of_measurement: 'kW'
+      accuracy_decimals: 3
+      device_class: energy
+      state_class: measurement
+    - name: "Stromverbrauch Gesamt"
+      icon: mdi:circle-slice-3
+      unit_of_measurement: 'kWh'
+      accuracy_decimals: 3
+      device_class: energy
+      state_class: total_increasing
