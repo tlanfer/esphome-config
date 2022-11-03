@@ -1,0 +1,114 @@
+substitutions:
+  project: any
+  id: smart-plug-a
+  friendly_name: Smart Plug A
+  relay_restore_mode: RESTORE_DEFAULT_ON
+
+esphome:
+  name: $id
+
+esp8266:
+  board: esp8285
+  restore_from_flash: true
+
+preferences:
+  flash_write_interval: 1min
+
+<<: !include common/logging.yaml
+<<: !include common/api.yaml
+<<: !include common/ota.yaml
+<<: !include common/wifi.yaml
+
+uart:
+  rx_pin: RX
+  baud_rate: 4800
+
+binary_sensor:
+  - platform: status
+    name: "${friendly_name} Status"
+
+  - platform: gpio
+    pin:
+      number: 5
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "${friendly_name} Power Button"
+    disabled_by_default: true
+    on_multi_click:
+      - timing:
+          - ON for at most 1s
+          - OFF for at least 0.2s
+        then:
+          - switch.toggle: relay
+      - timing:
+          - ON for at least 4s
+        then:
+          - button.press: Reset
+
+sensor:
+  - platform: uptime
+    name: "${friendly_name} Uptime Sensor"
+
+  - platform: cse7766
+    update_interval: 10s
+    current:
+      name: "${friendly_name} Current"
+      filters:
+        - lambda: if (x < 0.060) return 0.0; else return x;   #For the chip will report less than 3w power when no load is connected
+
+    voltage:
+      name: "${friendly_name} Voltage"
+    power:
+      name: "${friendly_name} Power"
+      id: power_sensor
+      filters:
+        - lambda: if (x < 3.0) return 0.0; else return x;    #For the chip will report less than 3w power when no load is connected
+
+    energy:
+      name: "${friendly_name} Energy"
+      unit_of_measurement: kWh
+      filters:
+        # Multiplication factor from W to kW is 0.001
+        - multiply: 0.001
+
+
+  - platform: total_daily_energy
+    name: "${friendly_name} Total Daily Energy"
+    restore: true
+    power_id: power_sensor
+    unit_of_measurement: kWh
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+
+
+button:
+  - platform: factory_reset
+    name: Restart with Factory Default Settings
+    id: Reset
+
+switch:
+  - platform: gpio
+    name: "${friendly_name}"
+    pin: GPIO12
+    id: relay
+    restore_mode: ${relay_restore_mode}
+
+light:
+  - platform: status_led
+    name: "${friendly_name} Status LED"
+    id: blue_led
+    disabled_by_default: true
+    pin:
+      inverted: true
+      number: GPIO13
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "${friendly_name} IP Address"
+      disabled_by_default: true
+
+time:
+  - platform: sntp
+    id: my_time
