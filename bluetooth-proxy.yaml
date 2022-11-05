@@ -1,0 +1,20 @@
+substitutions:
+  project: any
+  id: bluetooth-proxy
+  friendly_name: Bluetooth Proxy
+
+esphome:
+  name: $id
+
+esp32:
+  board: lolin32_lite
+
+<<: !include common/logging.yaml
+<<: !include common/api.yaml
+<<: !include common/ota.yaml
+<<: !include common/wifi.yaml
+
+### Bluetooth proxy
+
+bluetooth_proxy:
+  active: true
