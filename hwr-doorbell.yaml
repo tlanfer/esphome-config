@@ -4,16 +4,16 @@ substitutions:
   devicename: hwr_doorbell
   friendly_name: Doorbell
 
+  pc817_emitter: D6
+  pc817_collector: D5
+
 esphome:
   name: $id
 
 esp8266:
   board: nodemcuv2
 
-logger:
-  level: DEBUG
-
-#<<: !include common/logging.yaml
+<<: !include common/logging.yaml
 <<: !include common/api.yaml
 <<: !include common/ota.yaml
 <<: !include common/wifi.yaml
@@ -29,7 +29,7 @@ logger:
 
 output:
   - platform: gpio
-    pin: D6
+    pin: ${pc817_emitter}
     id: gpio_power
 
 binary_sensor:
@@ -37,7 +37,7 @@ binary_sensor:
     name: "Button"
     icon: mdi:bell
     pin:
-      number: D5
+      number: ${pc817_collector}
       inverted: true
       mode:
         input: true
