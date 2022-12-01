@@ -1,0 +1,49 @@
+substitutions:
+  project: hwr
+  id: doorbell
+  devicename: hwr_doorbell
+  friendly_name: Doorbell
+
+esphome:
+  name: $id
+
+esp8266:
+  board: nodemcuv2
+
+logger:
+  level: DEBUG
+
+#<<: !include common/logging.yaml
+<<: !include common/api.yaml
+<<: !include common/ota.yaml
+<<: !include common/wifi.yaml
+
+sensor:
+  - !include common/sensor/wifi_signal.yaml
+
+##### Device specific
+
+# Optocoupler: PC817
+#
+# PC817          | Wemos D1
+# -----------------------------
+# 3 (Emitter)    | D6
+# 4 (Collector)  | D5
+
+output:
+  - platform: gpio
+    pin: D6
+    id: gpio_power
+
+binary_sensor:
+  - platform: gpio
+    name: "Button"
+    icon: mdi:bell
+    pin:
+      number: D5
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_off: 10s
