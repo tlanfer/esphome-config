@@ -22,9 +22,6 @@ time:
 
 ############ COPY
 
-sensor:
-  - !include common/sensor/wifi_signal.yaml
-
   # Reports the Current, Voltage, and Power used by the plugged-in device
   - platform: hlw8012
     sel_pin:

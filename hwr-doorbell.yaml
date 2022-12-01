@@ -18,9 +18,6 @@ logger:
 <<: !include common/ota.yaml
 <<: !include common/wifi.yaml
 
-sensor:
-  - !include common/sensor/wifi_signal.yaml
-
 ##### Device specific
 
 # Optocoupler: PC817

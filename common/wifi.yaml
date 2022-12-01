@@ -14,3 +14,10 @@ captive_portal:
 
 web_server:
 
+sensor:
+  - platform: wifi_signal
+    name: WiFi Signal
+    update_interval: 30s
+
+  - platform: uptime
+    name: Uptime Sensor
