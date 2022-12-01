@@ -12,7 +12,6 @@ esp8266:
 <<: !include common/api.yaml
 <<: !include common/ota.yaml
 <<: !include common/wifi.yaml
-<<: !include common/mqtt.yaml
 
 ##### Irrigation control
 
