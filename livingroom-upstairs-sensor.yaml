@@ -1,0 +1,29 @@
+substitutions:
+  project: livingroom_upstairs
+  id: sensor
+  devicename: livingroom_upstairs_sensor
+  friendly_name: Sensor
+
+  AM2301_PIN: D4
+
+esphome:
+  name: $id
+
+esp8266:
+  board: nodemcuv2
+
+<<: !include common/logging.yaml
+<<: !include common/api.yaml
+<<: !include common/ota.yaml
+<<: !include common/wifi.yaml
+
+##### Device specific
+
+sensor:
+  - platform: dht
+    pin: ${AM2301_PIN}
+    temperature:
+      name: "Temperature"
+    humidity:
+      name: "Humidity"
+    update_interval: 60s
