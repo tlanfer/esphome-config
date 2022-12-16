@@ -1,0 +1,42 @@
+substitutions:
+  project: home
+  id: sonoff-socket-01
+  devicename: sonoff-socket-01
+  friendly_name: Sonoff Socket 01
+
+esphome:
+  name: $id
+
+esp8266:
+  board: esp01_1m
+
+<<: !include common/logging.yaml
+<<: !include common/api.yaml
+<<: !include common/ota.yaml
+<<: !include common/wifi.yaml
+
+##### Device specific
+# Sonoff S10
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "Sonoff S20 Button"
+    on_press:
+      - switch.toggle: relay
+  - platform: status
+    name: "Sonoff S20 Status"
+
+switch:
+  - platform: gpio
+    name: "Sonoff S20 Relay"
+    pin: GPIO12
+    id: relay
+
+status_led:
+  pin:
+    number: GPIO13
+    inverted: true

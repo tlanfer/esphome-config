@@ -1,0 +1,43 @@
+substitutions:
+  project: hwr
+  id: gasmeter
+  devicename: hwr_gasmeter
+  friendly_name: Gas Meter
+
+esphome:
+  name: $id
+
+esp8266:
+  board: nodemcuv2
+
+<<: !include common/logging.yaml
+<<: !include common/api.yaml
+<<: !include common/ota.yaml
+<<: !include common/wifi.yaml
+
+##### Garage gate
+
+sensor:
+    - platform: pulse_meter
+      name: "Gas usage"
+      device_class: gas
+      state_class: measurement
+      pin:
+        number: D6
+        mode:
+          input: true
+          pullup: true
+      internal_filter: 300ms
+      internal_filter_mode: "EDGE"
+      unit_of_measurement: 'm³/h'
+      accuracy_decimals: 3
+      filters:
+        - multiply: 0.06
+      total:
+        name: "Gas usage Total"
+        unit_of_measurement: "m³"
+        accuracy_decimals: 3
+        device_class: gas
+        state_class: total_increasing
+        filters:
+          - multiply: 0.001
