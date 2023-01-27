@@ -15,29 +15,60 @@ esp8266:
 <<: !include common/ota.yaml
 <<: !include common/wifi.yaml
 
-##### Garage gate
+##### Gas meter
+
+globals:
+  - id: gas_consumed_pulses
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  - id: gas_consumed_pulse_time
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  - id: gas_usage
+    type: float
+    restore_value: no
+    initial_value: '0.0'
+
+binary_sensor:
+  - platform: gpio
+    id: reed
+    pin:
+      number: D6
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_on: 250ms
+    on_press:
+      then:
+        - lambda: |-
+            int now = millis();
+            if( id(gas_consumed_pulse_time) > 0){
+              int since = now - id(gas_consumed_pulse_time);
+              id(gas_usage) = 36000.0/since;
+            }
+            id(gas_consumed_pulses)++;
+            id(gas_consumed_pulse_time) = now;
 
 sensor:
-    - platform: pulse_meter
-      name: "Gas usage"
-      device_class: gas
-      state_class: measurement
-      pin:
-        number: D6
-        mode:
-          input: true
-          pullup: true
-      internal_filter: 300ms
-      internal_filter_mode: "EDGE"
-      unit_of_measurement: 'm³/h'
-      accuracy_decimals: 3
-      filters:
-        - multiply: 0.06
-      total:
-        name: "Gas usage Total"
-        unit_of_measurement: "m³"
-        accuracy_decimals: 3
-        device_class: gas
-        state_class: total_increasing
-        filters:
-          - multiply: 0.001
+  - platform: template
+    name: "Gas usage Total"
+    id: gas_total
+    unit_of_measurement: 'm³'
+    device_class: gas
+    state_class: total_increasing
+    accuracy_decimals: 3
+    lambda: 'return id(gas_consumed_pulses)*0.01;'
+
+  - platform: template
+    name: "Gas usage Current"
+    id: gas_current
+    unit_of_measurement: 'm³/h'
+    device_class: gas
+    state_class: total_increasing
+    accuracy_decimals: 3
+    lambda: 'return id(gas_usage);'
