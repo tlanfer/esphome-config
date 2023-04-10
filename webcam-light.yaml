@@ -1,0 +1,39 @@
+substitutions:
+  project: bedroom
+  id: keylight
+  devicename: bedroom-keylight
+  friendly_name: Keylight
+
+
+esphome:
+  name: $id
+  platform: ESP8266
+  board: d1_mini
+
+<<: !include common/logging.yaml
+<<: !include common/api.yaml
+<<: !include common/ota.yaml
+<<: !include common/wifi.yaml
+
+##### Light
+
+output:
+  - platform: esp8266_pwm
+    pin: D5
+    frequency: 1000 Hz
+    id: pwm1
+  - platform: esp8266_pwm
+    pin: D6
+    frequency: 1000 Hz
+    id: pwm2
+
+# Example usage in a light
+light:
+  - platform: cwww
+    id: webcam_light
+    name: "Webcam light"
+    cold_white: pwm1
+    warm_white: pwm2
+    cold_white_color_temperature: 6536 K
+    warm_white_color_temperature: 2000 K
+    default_transition_length: 0.5s
