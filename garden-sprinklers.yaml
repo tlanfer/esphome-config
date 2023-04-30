@@ -28,7 +28,7 @@ sprinkler:
       name: "Laufzeit wiederholen"
       initial_value: 0
       min_value: 0
-      max_value: 3
+      max_value: 5
     valve_overlap: 1s
     valves:
       - valve_switch: "Vorne 1"
