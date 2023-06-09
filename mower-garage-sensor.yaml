@@ -1,0 +1,53 @@
+substitutions:
+  project: garden
+  id: mower-garage-sensor
+
+esphome:
+  name: $id
+
+esp8266:
+  board: nodemcuv2
+
+<<: !include common/logging.yaml
+<<: !include common/api.yaml
+<<: !include common/ota.yaml
+<<: !include common/wifi.yaml
+
+##### Mower garage sensor
+
+sensor:
+  - platform: dht
+    pin: D2
+    update_interval: 6s
+    temperature:
+      name: "Outside Temperature"
+      filters:
+        - sliding_window_moving_average:
+            window_size: 10
+            send_every: 10
+            send_first_at: 10
+    humidity:
+      name: "Outside Humidity"
+      filters:
+        - sliding_window_moving_average:
+            window_size: 10
+            send_every: 10
+            send_first_at: 10
+
+  - platform: adc
+    pin: A0
+    name: "Soil Moisture"
+    update_interval: 6s
+    device_class: "moisture"
+    state_class: "measurement"
+    unit_of_measurement: "%"
+    icon: "mdi:water-percent"
+    accuracy_decimals: 1
+    filters:
+      - sliding_window_moving_average:
+          window_size: 10
+          send_every: 10
+          send_first_at: 10
+      - calibrate_linear:
+          - 0.0 -> 0.0
+          - 1.0 -> 100.0
