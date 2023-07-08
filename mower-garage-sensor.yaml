@@ -38,6 +38,10 @@ sensor:
     pin: A0
     id: moisture_sensor_raw
     update_interval: 6s
+    filters:
+      - calibrate_linear:
+          - 0.5 -> 0.0
+          - 0.2 -> 100.0
 
   - platform: copy
     id: moisture_sensor_fast
@@ -53,9 +57,6 @@ sensor:
           window_size: 10   # 10 times 6s per reading = 60s / 1m of averaging
           send_every: 10    # 10 times 6s per reading = 60s / 1m between signals
           send_first_at: 10
-      - calibrate_linear:
-          - 0.0 -> 0.0
-          - 1.0 -> 100.0
 
   - platform: copy
     id: moisture_sensor_avg
@@ -71,6 +72,3 @@ sensor:
           window_size: 1200  # 1200 times 6s per reading = 7200s / 120m /2h of averaging
           send_every: 100    # 100 times 6s per reading = 600s / 10m between signals
           send_first_at: 100
-      - calibrate_linear:
-          - 0.0 -> 0.0
-          - 1.0 -> 100.0
