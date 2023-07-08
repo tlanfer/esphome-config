@@ -4,6 +4,8 @@ substitutions:
 
 esphome:
   name: $id
+  on_boot:
+    - script.execute: update_total_time
 
 esp8266:
   board: nodemcuv2
@@ -14,21 +16,53 @@ esp8266:
 <<: !include common/wifi.yaml
 
 ##### Irrigation control
+script:
+  - id: update_total_time
+    then:
+      - delay: 200ms
+      - sensor.template.publish:
+          id: total_cycle_time
+          state: !lambda |-
+            int repeats = 1;
+            if (id(lawn_sprinkler_ctrlr).repeat().has_value()) {
+              repeats += id(lawn_sprinkler_ctrlr).repeat().value();
+            }
+            uint32_t cycle_duration = id(lawn_sprinkler_ctrlr).total_cycle_time_enabled_valves();
+            uint32_t total_duration = repeats * cycle_duration;
+            return total_duration;
+
+sensor:
+  - platform: template
+    name: "Total cycle duration"
+    id: total_cycle_time
+    unit_of_measurement: 's'
+    device_class: duration
 
 sprinkler:
   - id: lawn_sprinkler_ctrlr
-    main_switch: "Bewässerung"
+    main_switch:
+      name: "Bewässerung"
+      on_turn_on:
+        script.execute: update_total_time
+
     auto_advance_switch: "Auto-Modus"
+
     multiplier_number:
       name: "Laufzeit Multiplikator"
       initial_value: 1
       min_value: 0.1
       max_value: 3
+      set_action:
+        - script.execute: update_total_time
+
     repeat_number:
       name: "Laufzeit wiederholen"
       initial_value: 0
       min_value: 0
       max_value: 5
+      set_action:
+        - script.execute: update_total_time
+
     valve_overlap: 1s
     valves:
       - valve_switch: "Vorne 1"
@@ -38,6 +72,8 @@ sprinkler:
           name: "Vorne 1 Laufzeit"
           min_value: 10
           max_value: 1800
+          set_action:
+            - script.execute: update_total_time
 
       - valve_switch: "Vorne 2"
         valve_switch_id: relay4
@@ -46,6 +82,8 @@ sprinkler:
           name: "Vorne 2 Laufzeit"
           min_value: 10
           max_value: 1800
+          set_action:
+            - script.execute: update_total_time
 
       - valve_switch: "Hinten 1"
         valve_switch_id: relay1
@@ -54,6 +92,8 @@ sprinkler:
           name: "Hinten 1 Laufzeit"
           min_value: 10
           max_value: 1800
+          set_action:
+            - script.execute: update_total_time
 
       - valve_switch: "Hinten 2"
         valve_switch_id: relay2
@@ -62,6 +102,8 @@ sprinkler:
           name: "Hinten 2 Laufzeit"
           min_value: 10
           max_value: 1800
+          set_action:
+            - script.execute: update_total_time
 
 switch:
 # Hinten Ecke
