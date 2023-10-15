@@ -1,0 +1,50 @@
+substitutions:
+  project: bedroom
+  id: bedsensor
+  devicename: bedroom-bedsensor
+  friendly_name: Bed sensor
+
+packages:
+  base: !include common/base.yaml
+  wemos: !include common/devices/wemos-d1.yaml
+
+##### Sensors
+number:
+  - platform: template
+    name: "Occupancy threshold"
+    id: threshold
+    optimistic: true
+    restore_value: true
+    initial_value: 20
+    min_value: 0
+    max_value: 100
+    step: 1
+
+binary_sensor:
+  - platform: template
+    name: "Bed occupied"
+    device_class: occupancy
+    lambda: |-
+      if (id(movement).state > id(threshold).state) {
+        return true;
+      } else {
+        return false;
+      }
+    filters:
+      - delayed_on_off: 1s
+
+sensor:
+  - platform: adc
+    pin: A0
+    name: "Bed movement"
+    id: movement
+    update_interval: 1s
+    unit_of_measurement: "%"
+    filters:
+      - calibrate_linear:
+          method: exact
+          datapoints:
+            -  0.0 ->   0.0
+            -  0.4 ->   1.0
+            -  1.0 -> 100.0
+      - delta: 0.1

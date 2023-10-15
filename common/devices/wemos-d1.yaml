@@ -1,0 +1,3 @@
+esphome:
+  platform: ESP8266
+  board: d1_mini

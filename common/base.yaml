@@ -1,0 +1,41 @@
+# esphome basics
+
+esphome:
+  name: $id
+  friendly_name: $friendly_name
+
+# Enable wifi
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_pass
+  fast_connect: true
+
+  # Fallback Hotspot (requires "captive_portal:").
+  ap:
+    ssid: $id
+    password: !secret wifi_pass_failover
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi Signal
+    update_interval: 30s
+
+  - platform: uptime
+    name: Uptime Sensor
+
+captive_portal:
+
+web_server:
+
+# Enable OTA updates
+ota:
+  password: ""
+
+# Enable Home Assistant API
+api:
+  password: ""
+  reboot_timeout: 0s
+
+# Enable logging
+logger:
+  level: DEBUG
