@@ -39,3 +39,8 @@ api:
 # Enable logging
 logger:
   level: DEBUG
+
+# Allow remote restart
+button:
+  - platform: restart
+    name: "Restart"
