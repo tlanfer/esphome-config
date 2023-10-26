@@ -44,6 +44,5 @@ sensor:
           method: exact
           datapoints:
             -  0.0 ->   0.0
-            -  0.4 ->   1.0
-            -  1.0 -> 100.0
+            -  0.5 ->   100
       - delta: 0.1
