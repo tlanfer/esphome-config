@@ -1,0 +1,40 @@
+substitutions:
+  project: home
+  id: treats
+  friendly_name: Treat Dispenser
+
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/wemos-s2-mini.yaml
+
+esphome:
+  on_boot:
+    priority: 600
+    then:
+      - switch.turn_off: dispenser
+
+##### Sensors
+switch:
+  - platform: gpio
+    pin:
+      number: 18
+      mode: OUTPUT
+    name: "Dispense"
+    id: dispenser
+    restore_mode: ALWAYS_OFF
+    on_turn_on:
+      - delay: !lambda "return id(duration).state;"
+      - switch.turn_off: dispenser
+
+number:
+  - platform: template
+    id: duration
+    name: "Duration"
+    unit_of_measurement: ms
+    mode: slider
+    optimistic: true
+    restore_value: true
+    min_value: 50
+    max_value: 1500
+    step: 50
+    initial_value: 500

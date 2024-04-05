@@ -1,0 +1,147 @@
+substitutions:
+  id: smart-plug-05
+  project: any
+  friendly_name: Smart Plug 05
+  relay_restore_mode: RESTORE_DEFAULT_ON
+
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/athom-smart-plug.yaml
+
+### Custom stuff
+### Athom smart plug
+
+uart:
+  rx_pin: GPIO20
+  baud_rate: 4800
+  data_bits: 8
+  stop_bits: 1
+  parity: EVEN
+
+globals:
+  - id: total_energy
+    type: float
+    restore_value: yes
+    initial_value: '0.0'
+
+binary_sensor:
+  - platform: status
+    name: "Status"
+    entity_category: diagnostic
+
+  - platform: gpio
+    pin:
+      number: GPIO3
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Power Button"
+    disabled_by_default: true
+    on_multi_click:
+      - timing:
+          - ON for at most 1s
+          - OFF for at least 0.2s
+        then:
+          - switch.toggle: relay
+      - timing:
+          - ON for at least 4s
+        then:
+          - button.press: Reset
+
+sensor:
+  - platform: cse7766
+    current:
+      name: "Current"
+      filters:
+        - lambda: if (x < 0.060) return 0.0; else return x;   #For the chip will report less than 3w power when no load is connected
+        - or:
+          - delta: 0.01
+          - heartbeat: 30s
+
+    voltage:
+      name: "Voltage"
+
+    power:
+      name: "Power"
+      id: power_sensor
+      filters:
+        - lambda: if (x < 3.0) return 0.0; else return x;    #For the chip will report less than 3w power when no load is connected
+        - or:
+            - delta: 0.1
+            - heartbeat: 30s
+
+    energy:
+      name: "Energy"
+      id: energy
+      unit_of_measurement: kWh
+      filters:
+        # Multiplication factor from W to kW is 0.001
+        - multiply: 0.001
+        - or:
+            - delta: 0.001
+            - heartbeat: 30s
+      on_value:
+        then:
+          - lambda: |-
+              static float previous_energy_value = 0.0;
+              float current_energy_value = id(energy).state;
+              id(total_energy) += current_energy_value - previous_energy_value;
+              previous_energy_value = current_energy_value;
+              id(total_energy_sensor).update();
+
+  - platform: template
+    name: "Total Energy"
+    id: total_energy_sensor
+    unit_of_measurement: kWh
+    device_class: "energy"
+    state_class: "total_increasing"
+    icon: "mdi:lightning-bolt"
+    accuracy_decimals: 3
+    lambda: |-
+      return id(total_energy);
+    update_interval: 30s
+
+  - platform: total_daily_energy
+    name: "Total Daily Energy"
+    restore: true
+    power_id: power_sensor
+    unit_of_measurement: kWh
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+      - delta: 1%
+
+button:
+  - platform: restart
+    name: "Restart"
+    entity_category: config
+
+  - platform: factory_reset
+    name: "Factory Reset"
+    id: Reset
+    entity_category: config
+
+  - platform: safe_mode
+    name: "Safe Mode"
+    internal: false
+    entity_category: config
+
+switch:
+  - platform: gpio
+    name: "Power"
+    pin: GPIO5
+    id: relay
+    restore_mode: ${relay_restore_mode}
+
+light:
+  - platform: status_led
+    name: "Status LED"
+    id: blue_led
+    disabled_by_default: true
+    pin:
+      inverted: true
+      number: GPIO6
+
+time:
+  - platform: sntp
+    id: sntp_time
+    update_interval: 360min

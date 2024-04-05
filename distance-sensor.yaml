@@ -1,0 +1,39 @@
+substitutions:
+  id: distance-sensor
+  project: any
+  friendly_name: Distance Sensor
+
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/wemos-d1.yaml
+
+
+### Custom stuff
+
+external_components:
+  source:
+    type: git
+    url: https://github.com/mrtoy-me/esphome-my-components
+    ref: main
+  components: [ vl53l1x ]
+
+i2c:
+  - id: bus_a
+    scan: True
+
+vl53l1x:
+  distance_mode: long
+  update_interval: 1200ms
+
+sensor:
+  - platform: vl53l1x
+    i2c_id: bus_a
+    distance:
+      name: Distance
+    range_status:
+      name: Range Status
+
+binary_sensor:
+  - platform: vl53l1x
+    range_valid:
+      name: Distance Reading Valid
