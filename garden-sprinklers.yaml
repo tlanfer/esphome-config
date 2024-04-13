@@ -16,6 +16,13 @@ esp8266:
 <<: !include common/wifi.yaml
 
 ##### Irrigation control
+
+globals:
+  - id: last_start_value
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+
 script:
   - id: update_total_time
     then:
@@ -37,6 +44,88 @@ sensor:
     id: total_cycle_time
     unit_of_measurement: 's'
     device_class: duration
+
+  - platform: template
+    name: "Wasser zuletzt"
+    lambda: "return id(water_total).state - id(last_start_value);"
+    update_interval: 1s
+    unit_of_measurement: "L"
+    accuracy_decimals: 1
+    device_class: "water"
+    icon: mdi:water
+    filters:
+      - delta: 0.1
+
+  - platform: pulse_meter
+    id: water_meter
+    pin: D5
+    name: "Fließrate"
+    icon: mdi:water
+    timeout: 5s
+    unit_of_measurement: "L/min"
+    accuracy_decimals: 2
+    device_class: "volume_flow_rate"
+    state_class: "measurement"
+    filters:
+      - lambda: "return x / (id(pulses_per_liter).state*1.0);"
+
+    on_value_range:
+      - below: 0.1
+        then:
+          - binary_sensor.template.publish:
+              id: water_active
+              state: OFF
+      - above: 0.1
+        then:
+          - binary_sensor.template.publish:
+              id: water_active
+              state: ON
+
+    total:
+      name: "Wasser Gesamt"
+      id: water_total
+      unit_of_measurement: "L"
+      accuracy_decimals: 1
+      device_class: "water"
+      state_class: "total_increasing"
+      icon: mdi:water
+      filters:
+        - lambda: "return x / (id(pulses_per_liter).state*1.0);"
+
+binary_sensor:
+  - platform: template
+    id: water_active
+    name: "Wasser fließt"
+    on_press:
+      if:
+        condition:
+          for:
+            time: 30s
+            condition:
+              binary_sensor.is_off: water_active
+        then:
+          - lambda: "id(last_start_value) = id(water_total).state;"
+
+button:
+  - platform: template
+    name: "Reset"
+    on_press:
+      then:
+        - pulse_meter.set_total_pulses:
+            id: water_meter
+            value: 0
+
+number:
+  - platform: template
+    entity_category: config
+    name: "Pulses per liter"
+    id: pulses_per_liter
+    min_value: 100
+    max_value: 1000
+    step: 1
+    optimistic: true
+    restore_value: true
+    initial_value: 360
 
 sprinkler:
   - id: lawn_sprinkler_ctrlr

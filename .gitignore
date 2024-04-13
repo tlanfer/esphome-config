@@ -4,3 +4,4 @@
 /.esphome/
 /.idea/
 /secrets.yaml
+/test.yaml
