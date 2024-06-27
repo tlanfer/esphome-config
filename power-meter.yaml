@@ -1,38 +1,115 @@
 substitutions:
   project: hwr
   id: power-meter
+  friendly_name: Power meter
+
+  pin_sensor: A0
+  pin_led: D1
+  pin_led_gnd: D2
+
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/wemos-d1.yaml
 
 esphome:
-  name: $id
-  includes:
-    - power-meter.h
+  on_boot:
+    priority: 600
+    then:
+      - output.turn_off: led_gnd
+      - lambda: |-
+          id(threshold_sensor).set_upper_threshold(id(threshold_value).state);
+          id(threshold_sensor).set_lower_threshold(id(threshold_value).state);
 
-esp8266:
-  board: d1_mini
+globals:
+  - id: global_power_timer
+    type: int
+    restore_value: no
+    initial_value: '0'
 
-<<: !include common/logging.yaml
-<<: !include common/api.yaml
-<<: !include common/ota.yaml
-<<: !include common/wifi.yaml
+  - id: global_power_total
+    type: float
+    restore_value: no
+    initial_value: '0.0'
+
+number:
+  - platform: template
+    name: "Threshold"
+    id: threshold_value
+    optimistic: true
+    min_value: 0
+    max_value: 200
+    step: 1
+    restore_value: true
+    on_value:
+      then:
+        - lambda: |-
+            id(threshold_sensor).set_upper_threshold(x);
+            id(threshold_sensor).set_lower_threshold(x);
+
+output:
+  - platform: gpio
+    pin: $pin_led
+    id: led
+
+  - platform: gpio
+    pin: $pin_led_gnd
+    id: led_gnd
 
 sensor:
-  - platform: custom
-    id: power_usage
+  - platform: adc
+    id: adc_sensor
+    pin: $pin_sensor
+    update_interval: never
+
+  - platform: template
+    id: irsensor
+    internal: true
+    update_interval: 10ms
+    accuracy_decimals: 0
     lambda: |-
-      auto my_sensor = new MyPowerSensor(65);
-      App.register_component(my_sensor);
-      return {my_sensor->power_sensor, my_sensor->total_sensor};
-      
-    sensors:
-    - name: "Stromverbrauch"
-      icon: mdi:flash-outline
-      unit_of_measurement: 'kW'
-      accuracy_decimals: 3
-      device_class: energy
-      state_class: measurement
-    - name: "Stromverbrauch Gesamt"
-      icon: mdi:circle-slice-3
-      unit_of_measurement: 'kWh'
-      accuracy_decimals: 3
-      device_class: energy
-      state_class: total_increasing
+      id(led).turn_on();
+      float onVal = id(adc_sensor).sample();
+      id(led).turn_off();
+      float offVal = id(adc_sensor).sample();
+      return (onVal - offVal)*1000;
+    filters:
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 5
+          send_first_at: 5
+
+  - platform: template
+    id: power_usage
+    name: "Stromverbrauch"
+    icon: mdi:flash-outline
+    unit_of_measurement: 'kW'
+    accuracy_decimals: 3
+    device_class: energy
+    state_class: measurement
+
+  - platform: template
+    id: power_total
+    name: "Stromverbrauch Gesamt"
+    icon: mdi:circle-slice-3
+    unit_of_measurement: 'kWh'
+    accuracy_decimals: 3
+    device_class: energy
+    state_class: total_increasing
+
+binary_sensor:
+  - platform: analog_threshold
+    id: threshold_sensor
+    sensor_id: irsensor
+    threshold: 50
+    on_press:
+      then:
+        - lambda: |-
+            id(global_power_total) += 1.0/75.0;
+            id(power_total).publish_state(id(global_power_total));
+            
+            if(id(global_power_timer) != 0) {
+              int diff = millis() - id(global_power_timer);
+              float usage = (3600000.0 / diff) / 75.0;
+              id(power_usage).publish_state(usage);
+            }
+            id(global_power_timer) = millis();

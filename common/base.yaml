@@ -38,7 +38,7 @@ api:
 
 # Enable logging
 logger:
-  level: DEBUG
+  level: INFO
 
 # Allow remote restart
 button:
