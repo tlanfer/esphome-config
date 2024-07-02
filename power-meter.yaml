@@ -17,8 +17,8 @@ esphome:
     then:
       - output.turn_off: led_gnd
       - lambda: |-
-          id(threshold_sensor).set_upper_threshold(id(threshold_value).state);
-          id(threshold_sensor).set_lower_threshold(id(threshold_value).state);
+          id(threshold_sensor).set_upper_threshold(id(threshold_value_high).state);
+          id(threshold_sensor).set_lower_threshold(id(threshold_value_low).state);
 
 globals:
   - id: global_power_timer
@@ -33,8 +33,25 @@ globals:
 
 number:
   - platform: template
-    name: "Threshold"
-    id: threshold_value
+    name: "Threshold Low"
+    id: threshold_value_low
+    entity_category: config
+    mode: box
+    optimistic: true
+    min_value: 0
+    max_value: 200
+    step: 1
+    restore_value: true
+    on_value:
+      then:
+        - lambda: |-
+            id(threshold_sensor).set_lower_threshold(x);
+
+  - platform: template
+    name: "Threshold High"
+    id: threshold_value_high
+    entity_category: config
+    mode: box
     optimistic: true
     min_value: 0
     max_value: 200
@@ -44,7 +61,6 @@ number:
       then:
         - lambda: |-
             id(threshold_sensor).set_upper_threshold(x);
-            id(threshold_sensor).set_lower_threshold(x);
 
 output:
   - platform: gpio
@@ -77,6 +93,12 @@ sensor:
           window_size: 5
           send_every: 5
           send_first_at: 5
+#    on_value:
+#      then:
+#        - logger.log:
+#            level: INFO
+#            format: "IR Sensor: %f"
+#            args: [ 'id(irsensor).state' ]
 
   - platform: template
     id: power_usage
@@ -86,6 +108,8 @@ sensor:
     accuracy_decimals: 3
     device_class: energy
     state_class: measurement
+    filters:
+      - skip_initial: 1
 
   - platform: template
     id: power_total
@@ -95,12 +119,16 @@ sensor:
     accuracy_decimals: 3
     device_class: energy
     state_class: total_increasing
+    filters:
+      - skip_initial: 1
 
 binary_sensor:
   - platform: analog_threshold
     id: threshold_sensor
     sensor_id: irsensor
-    threshold: 50
+    threshold:
+      upper: 60
+      lower: 40
     on_press:
       then:
         - lambda: |-
@@ -109,7 +137,7 @@ binary_sensor:
             
             if(id(global_power_timer) != 0) {
               int diff = millis() - id(global_power_timer);
-              float usage = (3600000.0 / diff) / 75.0;
+              float usage = 48000.0 / diff;
               id(power_usage).publish_state(usage);
             }
             id(global_power_timer) = millis();
