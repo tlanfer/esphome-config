@@ -1,0 +1,130 @@
+substitutions:
+  id: smart-plug-09
+  project: any
+  friendly_name: Smart Plug 09
+  relay_restore_mode: RESTORE_DEFAULT_ON
+  sensor_update_interval: 10s
+  current_limit : "16"
+
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/athom-smart-plug-esp8266.yaml
+
+### Custom stuff
+### Athom smart plug
+
+uart:
+  rx_pin: RX
+  baud_rate: 4800
+
+globals:
+  - id: total_energy
+    type: float
+    restore_value: yes
+    initial_value: '0.0'
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: 5
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Power Button"
+    disabled_by_default: true
+    on_multi_click:
+      - timing:
+          - ON for at most 1s
+          - OFF for at least 0.2s
+        then:
+          - switch.toggle: relay
+
+sensor:
+  - platform: cse7766
+    current:
+      name: "Current"
+      filters:
+        - throttle_average: ${sensor_update_interval}
+        - lambda: if (x < 0.060) return 0.0; else return x;   #For the chip will report less than 3w power when no load is connected
+      on_value_range:
+        - above: ${current_limit}
+          then:
+            - switch.turn_off: relay
+
+    voltage:
+      name: "Voltage"
+      filters:
+        - throttle_average: ${sensor_update_interval}
+
+    power:
+      name: "Power"
+      id: power_sensor
+      filters:
+        - throttle_average: ${sensor_update_interval}
+        - lambda: if (x < 3.0) return 0.0; else return x;    #For the chip will report less than 3w power when no load is connected
+
+    energy:
+      name: "Energy"
+      id: energy
+      unit_of_measurement: kWh
+      filters:
+        - throttle: ${sensor_update_interval}
+        # Multiplication factor from W to kW is 0.001
+        - multiply: 0.001
+      on_value:
+        then:
+          - lambda: |-
+              static float previous_energy_value = 0.0;
+              float current_energy_value = id(energy).state;
+              id(total_energy) += current_energy_value - previous_energy_value;
+              previous_energy_value = current_energy_value;
+              id(total_energy_sensor).update();
+
+    apparent_power:
+      name: "Apparent Power"
+      filters:
+        - throttle_average: ${sensor_update_interval}
+    power_factor:
+      name: "Power Factor"
+      filters:
+        - throttle_average: ${sensor_update_interval}
+
+  - platform: template
+    name: "Total Energy"
+    id: total_energy_sensor
+    unit_of_measurement: kWh
+    device_class: "energy"
+    state_class: "total_increasing"
+    icon: "mdi:lightning-bolt"
+    accuracy_decimals: 3
+    lambda: |-
+      return id(total_energy);
+    update_interval: never
+
+  - platform: total_daily_energy
+    name: "Total Daily Energy"
+    restore: true
+    power_id: power_sensor
+    unit_of_measurement: kWh
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+
+switch:
+  - platform: gpio
+    name: "Switch"
+    pin: GPIO12
+    id: relay
+    restore_mode: ${relay_restore_mode}
+
+light:
+  - platform: status_led
+    name: "Status LED"
+    id: blue_led
+    disabled_by_default: true
+    pin:
+      inverted: true
+      number: GPIO13
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
