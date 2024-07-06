@@ -1,100 +1,67 @@
 substitutions:
   project: any
-  id: test
-  friendly_name: test
+  id: plant-sensor-01
+  friendly_name: Plant sensor 01
 
 packages:
   base: !include common/base.yaml
-  mqtt: !include common/mqtt.yaml
-  device: !include common/devices/esp32s3.yaml
-
-api: null
-# Enable logging
-logger:
-  level: INFO
+  device: !include common/devices/esp32c3.yaml
 
 wifi:
   fast_connect: true
 
-deep_sleep:
-  id: deep_sleep_1
-  sleep_duration: 30min
+#deep_sleep:
+#  id: deep_sleep_1
+#  sleep_duration: 30min
+#  run_duration: 10sec
 
 globals:
   - id: ota_mode
     type: bool
     initial_value: 'false'
 
-mqtt:
-  topic_prefix: "diy/test"
-  birth_message:
-    topic: "diy/dontcare"
-    payload: ""
-  will_message:
-    topic: "diy/dontcare"
-    payload: ""
+#esp32_touch:
+#  id: esp32_touch_1
+#  setup_mode: false
+#
+#  measurement_duration: 100us
+#  denoise_grade: BIT12
+#  denoise_cap_level: L0
+#  debounce_count: 1
+#  filter_mode: IIR_16
+#  noise_threshold: 0
+#  jitter_step: 0
+#  smooth_mode: IIR_2
 
-  on_message:
-    - topic: diy/test/ota_mode
-      payload: 'ON'
-      then:
-        - globals.set:
-            id: ota_mode
-            value: 'true'
-    - topic: diy/test/ota_mode
-      payload: 'OFF'
-      then:
-        - globals.set:
-            id: ota_mode
-            value: 'false'
-
-    - topic: diy/test/sensor/moisture/state
-      then:
-        - if:
-            condition:
-              lambda: 'return !id(ota_mode);'
-            then:
-              - deep_sleep.enter: deep_sleep_1
-
-esp32_touch:
-  id: esp32_touch_1
-  setup_mode: false
-
-  measurement_duration: 100us
-  denoise_grade: BIT12
-  denoise_cap_level: L0
-  debounce_count: 1
-  filter_mode: IIR_16
-  noise_threshold: 0
-  jitter_step: 0
-  smooth_mode: IIR_2
-
-binary_sensor:
-  - platform: esp32_touch
-    internal: true
-    id: touch_pin
-    pin: GPIO12
-    threshold: 100000
-
-esphome:
-  on_boot:
-    priority: 200
-    then:
-      - sensor.template.publish:
-          id: moisture
-          state: !lambda |-
-            auto raw_value = id(touch_pin).get_value();
-            auto min_value = id(value_dry).state;
-            auto max_value = id(value_wet).state;
-            return (raw_value - min_value) / (max_value - min_value) * 100.0f;
+#binary_sensor:
+#  - platform: esp32_touch
+#    internal: true
+#    id: touch_pin
+#    pin: 10
+#    threshold: 100000
 
 sensor:
-  - platform: template
-    id: moisture
-    name: "Moisture"
-    unit_of_measurement: "%"
-    device_class: moisture
-    icon: "mdi:water-percent"
+  - platform: adc
+    pin: 1
+    attenuation: 11db
+    name: "Battery Voltage"
+    filters:
+      - calibrate_linear:
+          - 0.0 -> 0.0
+          - 1.22 -> 4.00
+
+#  - platform: template
+#    id: moisture
+#    name: "Moisture"
+#    unit_of_measurement: "%"
+#    device_class: moisture
+#    icon: "mdi:water-percent"
+#    update_interval: 5s
+#    lambda: |-
+#      auto raw_value = id(touch_pin).get_value();
+#      auto min_value = id(value_dry).state;
+#      auto max_value = id(value_wet).state;
+#      return (raw_value - min_value) / (max_value - min_value) * 100.0f;
 
 number:
   - platform: template
