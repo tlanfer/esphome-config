@@ -1,17 +1,11 @@
 substitutions:
   project: garden
   id: mower-garage-sensor
+  friendly_name: Mower Garage Sensor
 
-esphome:
-  name: $id
-
-esp8266:
-  board: nodemcuv2
-
-<<: !include common/logging.yaml
-<<: !include common/api.yaml
-<<: !include common/ota.yaml
-<<: !include common/wifi.yaml
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/nodemcuv2.yaml
 
 ##### Mower garage sensor
 
@@ -40,7 +34,7 @@ sensor:
     update_interval: 6s
     filters:
       - calibrate_linear:
-          - 0.5 -> 0.0
+          - 0.7 -> 0.0
           - 0.2 -> 100.0
 
   - platform: copy
