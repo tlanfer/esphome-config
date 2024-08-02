@@ -1,5 +1,4 @@
 substitutions:
-  project: any
   id: pm-sensor-01
   friendly_name: PM Sensor 01
 
