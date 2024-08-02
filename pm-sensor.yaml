@@ -1,0 +1,17 @@
+substitutions:
+  project: any
+  id: pm-sensor-01
+  friendly_name: PM Sensor 01
+
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/esp32c3.yaml
+
+uart:
+  rx_pin: 6
+  baud_rate: 9600
+
+sensor:
+  - platform: pm1006
+    pm_2_5:
+      name: "Particulate Matter 2.5µm Concentration"
