@@ -29,6 +29,7 @@ web_server:
 
 # Enable OTA updates
 ota:
+  platform: esphome
   password: ""
 
 # Enable Home Assistant API

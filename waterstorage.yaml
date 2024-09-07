@@ -1,0 +1,22 @@
+substitutions:
+  id: waterstorage
+  friendly_name: Water Storage
+
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/esp32s3.yaml
+
+### Customizations
+
+one_wire:
+  - platform: gpio
+    pin: 7
+
+sensor:
+  - platform: dallas_temp
+    name: Temperature
+    update_interval: 30s
+#    filters:
+#      - sliding_window_moving_average:
+#          window_size: 6
+#          send_every: 6

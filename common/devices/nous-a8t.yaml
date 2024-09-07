@@ -1,0 +1,8 @@
+esphome:
+  name: "${id}"
+  friendly_name: "${friendly_name}"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf

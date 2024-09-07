@@ -194,6 +194,11 @@ sprinkler:
           set_action:
             - script.execute: update_total_time
 
+interval:
+  - interval: 1s
+    then:
+      - script.execute: update_total_time
+
 switch:
 # Hinten Ecke
   - platform: gpio
@@ -222,4 +227,3 @@ switch:
     pin: D4
     restore_mode: ALWAYS_OFF
     inverted: true
-
