@@ -31,6 +31,21 @@ globals:
     restore_value: no
     initial_value: '0.0'
 
+  - id: debug_mode
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+switch:
+  - platform: template
+    name: "Debug"
+    lambda: |-
+      return id(debug_mode);
+    turn_on_action:
+      - lambda: "id(debug_mode) = true;"
+    turn_off_action:
+      - lambda: "id(debug_mode) = false;"
+
 number:
   - platform: template
     name: "Threshold Low"
@@ -93,12 +108,16 @@ sensor:
           window_size: 5
           send_every: 5
           send_first_at: 5
-#    on_value:
-#      then:
-#        - logger.log:
-#            level: INFO
-#            format: "IR Sensor: %f"
-#            args: [ 'id(irsensor).state' ]
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: return id(debug_mode);
+            then:
+              - logger.log:
+                  level: INFO
+                  format: "IR Sensor: %f"
+                  args: [ 'id(irsensor).state' ]
 
   - platform: template
     id: power_usage
