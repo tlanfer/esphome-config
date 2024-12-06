@@ -1,0 +1,60 @@
+substitutions:
+  project: any
+  id: parking-sensor
+  friendly_name: Parking sensor
+
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/wemos-s2-mini.yaml
+
+### Custom stuff
+
+number:
+  - platform: template
+    name: "Max distance"
+    id: max_distance
+    optimistic: true
+    min_value: 0
+    max_value: 400
+    restore_value: true
+    step: 10
+
+sensor:
+  - platform: ultrasonic
+    name: "Distance"
+    trigger_pin: 33
+    echo_pin: 34
+    update_interval: 1s
+    pulse_time: 10us
+    timeout: 4.00m
+    on_value:
+      then:
+        - light.addressable_set:
+            id: strip
+            range_from: 0
+            range_to: 21
+            red: 0%
+            green: 0%
+            blue: 0%
+
+        - light.addressable_set:
+            id: strip
+            range_from: 0
+            range_to: !lambda |-
+              double max = id(max_distance).state / 100.0;
+              double v = 21/max * x;
+              return (int) v;
+            red: 100%
+            green: 0%
+            blue: 0%
+
+
+light:
+  - platform: esp32_rmt_led_strip
+    name: "Strip"
+    id: strip
+    rgb_order: GRB
+    pin: 7
+    num_leds: 21
+    rmt_channel: 0
+    chipset: ws2812
