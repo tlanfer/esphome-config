@@ -62,6 +62,7 @@ switch:
   - platform: gpio
     pin: GPIO14
     id: relay
+    restore_mode: ALWAYS_ON
 
 sensor:
   - platform: wifi_signal
