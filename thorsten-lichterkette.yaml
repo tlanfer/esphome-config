@@ -8,13 +8,12 @@ packages:
   device: !include common/devices/esp32s3.yaml
 
 ### Custom stuff
-output:
-  - platform: ledc
-    pin: 43
-    frequency: 2441 Hz
-    id: pwm_output
 
 light:
-  - platform: monochromatic
-    output: pwm_output
+  - platform: esp32_rmt_led_strip
+    rgb_order: GRB
+    pin: GPIO06
+    num_leds: 50
+    rmt_channel: 0
+    chipset: ws2812
     name: "Licht"
