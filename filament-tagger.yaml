@@ -1,0 +1,74 @@
+substitutions:
+  id: filament-tagger
+  friendly_name: Filament Tagger
+
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/esp32c3.yaml
+
+##### Sensors
+
+i2c:
+  sda: GPIO6
+  scl: GPIO7
+  scan: true
+
+pn532_i2c:
+  update_interval: 200ms
+  on_tag:
+    then:
+      - lambda: |-
+          id(rfid_tag).publish_state(x);
+          if (!tag.has_ndef_message()) {
+            return;
+          }
+          auto message = tag.get_ndef_message();
+          auto records = message->get_records();
+          if(records.size() != 1) {
+            return;
+          }
+          
+          auto record = records[0];
+          std::string payload = record->get_payload();
+          
+          if(payload.rfind("spool:", 0) == 0) {
+              id(spool_id).publish_state(payload.substr(6));
+          }
+
+http_request:
+  verify_ssl: false
+
+text_sensor:
+  - platform: template
+    name: "RFID Tag"
+    id: rfid_tag
+
+  - platform: template
+    name: "Spool ID "
+    id: spool_id
+
+    on_value:
+      then:
+        - output.set_level:
+            id: buzzer
+            level: 75%
+        - output.turn_on: buzzer
+        - delay: 500ms
+        - output.turn_off: buzzer
+        - logger.log:
+            format: "Spool ID: %s"
+            args: ["x.c_str()"]
+        - http_request.post:
+            url: http://192.168.1.245/printer/gcode/script
+#            url: "https://www.postb.in/..."
+            headers:
+              Content-Type: application/json
+            json:
+              script: !lambda |-
+                return "MMU_GATE_MAP NEXT_SPOOLID="+x;
+
+output:
+  - platform: ledc
+    pin: GPIO3
+    id: buzzer
+    frequency: 500 Hz

@@ -5,3 +5,4 @@
 /.idea/
 /secrets.yaml
 /test.yaml
+/components/git/__pycache__/
