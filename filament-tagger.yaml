@@ -66,6 +66,9 @@ text_sensor:
             json:
               script: !lambda |-
                 return "MMU_GATE_MAP NEXT_SPOOLID="+x;
+        - output.turn_on: buzzer
+        - delay: 500ms
+        - output.turn_off: buzzer
 
 output:
   - platform: ledc
