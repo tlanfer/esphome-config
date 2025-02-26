@@ -37,6 +37,7 @@ pn532_i2c:
 
 http_request:
   verify_ssl: false
+  timeout: 15s
 
 text_sensor:
   - platform: template
@@ -44,34 +45,48 @@ text_sensor:
     id: rfid_tag
 
   - platform: template
-    name: "Spool ID "
+    name: "Spool ID"
     id: spool_id
 
     on_value:
       then:
-        - output.set_level:
-            id: buzzer
-            level: 75%
-        - output.turn_on: buzzer
-        - delay: 500ms
-        - output.turn_off: buzzer
-        - logger.log:
-            format: "Spool ID: %s"
-            args: ["x.c_str()"]
+        - script.execute: beep_success
         - http_request.post:
-            url: http://192.168.1.245/printer/gcode/script
-#            url: "https://www.postb.in/..."
+            url: "http://192.168.1.245/printer/gcode/script"
             headers:
               Content-Type: application/json
             json:
               script: !lambda |-
-                return "MMU_GATE_MAP NEXT_SPOOLID="+x;
-        - output.turn_on: buzzer
-        - delay: 500ms
-        - output.turn_off: buzzer
+                return ((std::string) "MMU_GATE_MAP NEXT_SPOOLID="+x).c_str();
+            on_response:
+              then:
+                - script.execute: beep_success
+            on_error:
+              then:
+                - script.execute: beep_error
 
 output:
-  - platform: ledc
+  - platform: gpio
     pin: GPIO3
     id: buzzer
-    frequency: 500 Hz
+
+script:
+  - id: beep_success
+    then:
+      - output.turn_on: buzzer
+      - delay: 1000ms
+      - output.turn_off: buzzer
+
+  - id: beep_error
+    then:
+      - output.turn_on: buzzer
+      - delay: 300ms
+      - output.turn_off: buzzer
+      - delay: 200ms
+      - output.turn_on: buzzer
+      - delay: 300ms
+      - output.turn_off: buzzer
+      - delay: 200ms
+      - output.turn_on: buzzer
+      - delay: 300ms
+      - output.turn_off: buzzer
