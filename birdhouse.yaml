@@ -17,17 +17,27 @@ esphome:
 logger:
   baud_rate: 0
 
+globals:
+  - id: frames
+    type: int
+    restore_value: no
+    initial_value: '0'
+
 esp32_camera:
   name: Bird Cam
-  resolution: 1024x768
+  resolution: 800x600
   jpeg_quality: 20
   max_framerate: 30 fps
   idle_framerate: 1 fps
   wb_mode: cloudy
-  aec_mode: manual
-  agc_mode: manual
-  aec_value: 900
-  agc_gain_ceiling: 2x
+  aec_mode: auto
+  aec_value: 600
+  aec2: true
+  ae_level: 1
+  agc_mode: auto
+  agc_gain_ceiling: 4x
+  agc_value: 1
+  brightness: 1
 
   external_clock:
     pin: GPIO10
@@ -39,9 +49,35 @@ esp32_camera:
   vsync_pin: GPIO38
   href_pin: GPIO47
   pixel_clock_pin: GPIO13
+  on_image:
+    then:
+      - globals.set:
+          id: frames
+          value: !lambda 'return id(frames) + 1;'
+
+number:
+  - platform: template
+    id: fps
+    name: FPS
+    icon: mdi:video
+    unit_of_measurement: 'fps'
+    optimistic: true
+    step: 0.1
+    max_value: 100
+    min_value: 0
 
 esp32_camera_web_server:
   - port: 8080
     mode: stream
   - port: 8081
     mode: snapshot
+
+interval:
+  - interval: 30s
+    then:
+      - number.set:
+          id: fps
+          value: !lambda 'return id(frames) / 30.0;'
+      - globals.set:
+          id: frames
+          value: '0'
