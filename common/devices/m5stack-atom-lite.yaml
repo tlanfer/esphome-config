@@ -1,3 +1,2 @@
-esphome:
-  platform: ESP32
+esp32:
   board: m5stack-core-esp32

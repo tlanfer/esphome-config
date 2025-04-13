@@ -1,0 +1,101 @@
+substitutions:
+  id: coaster-sensor
+  friendly_name: Coaster
+
+packages:
+  base: !include common/base.yaml
+  device: !include common/devices/esp32c3.yaml
+
+
+### Custom stuff
+
+globals:
+  - id: tstamp
+    type: long
+    restore_value: no
+    initial_value: '0'
+
+  - id: last_weight
+    type: float
+    restore_value: no
+    initial_value: '0.0'
+
+  - id: drink_detected
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+text_sensor:
+  - platform: template
+    name: "Timestamp of last drink"
+    icon: mdi:timelapse
+    id: tstamp_text
+    device_class: timestamp
+    update_interval: 1s
+    lambda: |-
+      if( id(tstamp) != 0 ) {
+        char str[sizeof "2011-10-08T07:07:09Z"];
+        time_t currTime = id(tstamp);
+        strftime(str, sizeof(str), "%FT%TZ", gmtime(&currTime));
+        return  { str };
+      }
+      return {""};
+      
+
+binary_sensor:
+  - platform: template
+    name: "Drink detected"
+    icon: mdi:cup
+    device_class: occupancy
+    lambda: |-
+      if( id(drink_detected) ) {
+          return true;
+      }
+      return false;
+    
+
+sensor:
+  - platform: template
+    name: "Time since last drink"
+    internal: true
+    device_class: duration
+    unit_of_measurement: "s"
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: |-
+      if( id(tstamp) == 0 ) {
+        return NAN;
+      }
+      return id(current_time).now().timestamp - id(tstamp);
+
+  - platform: adc
+    id: weight_raw
+    pin: GPIO04
+    name: "Weight"
+    internal: true
+    update_interval: 0.1s
+    samples: 10
+    unit_of_measurement: "%"
+    entity_category: diagnostic
+    filters:
+      - calibrate_linear:
+          datapoints:
+            - 0.0 -> 100
+            - 0.9 -> 0
+      - delta: 1%
+      - debounce: 2s
+    on_value:
+      then:
+        - lambda: |-
+            if( ((x*2) < id(last_weight)) && (id(current_time).now().is_valid()) ) {
+              id(tstamp) = id(current_time).now().timestamp;
+              id(drink_detected) = false;
+            } else if (x > id(last_weight)*2) {
+              id(drink_detected) = true;
+            }
+            id(last_weight) = x;
+
+time:
+  - platform: homeassistant
+    id: current_time
+    timezone: "Europe/Berlin"
