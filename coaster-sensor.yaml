@@ -27,7 +27,7 @@ globals:
 
 text_sensor:
   - platform: template
-    name: "Timestamp of last drink"
+    name: "Last drink"
     icon: mdi:timelapse
     id: tstamp_text
     device_class: timestamp
@@ -44,7 +44,7 @@ text_sensor:
 
 binary_sensor:
   - platform: template
-    name: "Drink detected"
+    name: "Cup detected"
     icon: mdi:cup
     device_class: occupancy
     lambda: |-
@@ -56,7 +56,7 @@ binary_sensor:
 
 sensor:
   - platform: template
-    name: "Time since last drink"
+    name: "Seconds since last drink"
     internal: true
     device_class: duration
     unit_of_measurement: "s"
