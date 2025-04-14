@@ -48,10 +48,7 @@ binary_sensor:
     icon: mdi:cup
     device_class: occupancy
     lambda: |-
-      if( id(drink_detected) ) {
-          return true;
-      }
-      return false;
+      return id(drink_detected);
     
 
 sensor:
@@ -77,12 +74,13 @@ sensor:
     samples: 10
     unit_of_measurement: "%"
     entity_category: diagnostic
+    attenuation: 12db
     filters:
       - calibrate_linear:
           datapoints:
-            - 0.0 -> 100
-            - 0.9 -> 0
-      - delta: 1%
+            - 1.2 -> 100
+            - 3.3 -> 0
+      - delta: 3%
       - debounce: 2s
     on_value:
       then:
